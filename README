@@ -1,0 +1,71 @@
+Gleemin is a Magic the Gathering expert system, originally created as my dissertation for my CS course at the University of Brighton (the ugliest university in the UK). It is a text-mode only program. The todo list includes a proper user interface (we're talking ncurses here. What? You've been spoilt by GUIs!). 
+
+Gleemin is written entirely in the logic programming language Prolog. Why? Because otherwise I'd have had to write at least half of Prolog in some other language to begin with. To run the code here all you need is the Swi-Prolog interpreter (It's free and open source and you can get it from: http://www.swi-prolog.org/Download.html)
+
+Gleemin (and Glee-min, the AI opponent) is a playful punne or play on wordes with the name of the _real_ mind behind Wizards of the Coast Research & Development: Glee-max, an alien brain in a jar. Glee-max, Glee-min. Get it? Ha-ha.
+
+
+>===First Commit===<
+ - 17/12/11
+
+Gleemin works, after a fashion.
+
+It's relatively safe to play with the default decks, ie Curacao (blue, you) and Raspberry (Red, Glee-min). Other deck choices for Glee-min will probably cause a crash. You can safely select any of the default decks for yourself or create new ones, using the cards in the database (there is no interface for that though). 
+
+The reason some decks crash Glee-min is that the code was originally written for a proprietary Prolog interpreter under an educational license. Transferring everything to Swi-Prolog broke some stuff. I'll fix it all, eventually. Your contributions are welcome. 
+
+To start Gleemin, double click "main.pl" and enter "main." in the Prolog listener window that opens up. Follow the prompts from there. Please be advised that this is an alpha version and most things you'll want to do will simply break it. If you play spells in your opponent's turn, for example, or in the middle of combat, you'll break it. Pleaser refer to the Features list below for what you can currently do. Anything not in there, you should probably avoid it. 
+
+I like writing comments. If you have any question about the way Gleemin works, you'll probably find the answers by looking at my comments in the source. 
+
+
++---Features so far:---+ 
+The rules are currently the 2010 version of the Comprehensive rules. No Phyrexian Mana or anything after 2010. 
+
++-The Rules Engine-+
+
+The rules engine is some 60% complete, so you can play a more or less full game. By that I mean:
+
+    > You can take most player actions except special actions besides playing land (so no flipping cards, unmorphing morphs etc). 
+	
+	> Timing rules are mostly not enforced, so you can cast any spell type whenever you receive priority. 
+    
+	> Triggered abilities are not yet implemented and static abilities are not centrally handled (the layer system for replacement effects is not implemented). You can cast three families of spells, burn, bounce, destroy target and what-I-call “buff/debuff” (Giant Growth/ Sickness). A scant few abilities are implemented: Haste, Infect, Wither and Lifelink (the last three because they’re part of the damage rules).
+    
+	> Combat is 95% complete: you can declare attackers and blockers, order blockers and assign lethal damage. You can’t order attackers yet (since most creatures can only block a single attacker anyway).
+    
+	> Mana is 80% complete: no X-spells, hybrid costs or Phyrexian mana yet. 
+
+    > No Loyalty abilities, so no Planeswalkers yet. Other permanents should all work fine. 
+	
++-The Magic Game Language interpeter-+ 
+
+Gleemin includes a working parser for what I call the "Magic Game Language", ie, ability text. The parser reads ability text as it is on the cards, and calls rules engines predicates; that's how the engine resolves spells and abilities. The grammar it understands is currently limited to three or four abilities (bounce, "+X/+X", burn plus a few damage abilities like wither and lifelink), but the good news is that any spell or card ability that uses those abilities can be played (or at least those specific abilities on it that are covered by the grammar can). 
+
+There is also a “phrasal interface”, that lets you work with MGL to do the following: 
+
+	> Identify the type of an ability: spell, triggered, activated or static. Static and spell abilities still get confused (they’re both reported as spell abilities). 
+
+	> Verify an MGL phrase; you can enter your own Magic ability text and see how it is accepted by the parser. It probably won’t be, at this point, as it only recognises a few effects, like I said. It’s really just a programming language parser so it’s extremely anal about correct syntax. Pleaser refer to the file mgl_parser_interface.pl for more information on the phrasal interface. 
+
+	The phrasal interfce performs what I call “semantic” and “contextual” verification, by which I mean it needs a proper context for an ability. So if you have the MGL phrase: “Destroy target creature” and there’s no creature in play, it won’t recognise it as valid. It is a bit more practical than it sounds: the interface can be used outside of a game, using the facts in the Prolog database left over from a previously started game. A non-contextual, “syntactic” verification is possible which would just check that the syntax of the MGL is correct. However, semantic/contextual verification is used to find and verify the legality of targets during play and it can’t be done separately from semantic verification (a different, game-state agnostic set of grammar rules would be needed). So it’s not implemented yet as a separate feature.
+
+	> Generate new MGL. Enter “generate_MGL” in the Prolog command line, give it a type of MGL phrase you want it to generate and it will start returning phrases of that type. You get a lot of stuff like “Each Enchantment with Equip target player controls gains Islandwalk until end of turn”, that's generally correct but useless. On the upside, you can generate some pretty specific effects, with calls like:
+
+		| ?- generate_MGL(return(Target,Type), Phrase).
+		Target = object('Goblin Balloon Brigade' - 1,['summoning sickness']) ,
+		Type = 'Creature' ,
+		Phrase = 'Return target Creature to its owner''s hand ' ;
+
+		Target = object('Mountain' - 1,[tapped]) ,
+		Type = 'Land' ,
+		Phrase = 'Return target Land to its owner''s hand ' ;
+
+	-and so on. The phrase you get is given as an atom (a Prolog type), which means it needs to be converted to a comma – separated list for use in the engine (as an actual spell or ability). For now, the identify_MGL command can do that for you:
+
+		| ?- identify_MGL.
+		> |: Return target Creature to its owner's hand.
+		[Return,target,Creature,to,its,owner's,hand] is an MGL spell ability
+		yes 
+
+	You can then take this comma-separated list and paste it to a card’s text box field in the database and if the grammer has rules for it, the engine will resolve it. Note that you'll need to surround capitalised words with inverted commas and generally convert the syntax to valid Edinburgh-Prolog syntax, which the phrasal interface does not currently do for you. 
