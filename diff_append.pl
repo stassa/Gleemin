@@ -1,4 +1,3 @@
-
     diff_append(As-Bs, Bs-Cs, As-Cs).
 /*
 Usage:
