@@ -1,11 +1,147 @@
-Gleemin is a Magic the Gathering expert system, originally created as my dissertation for my CS course at the University of Brighton (the ugliest university in the UK). It is a command-line program meant as an AI research tool rather than entertainment. 
+Gleemin: The Magic Virtual Machine is a Magic the Gathering expert system, originally created as my dissertation for my CS course at the University of Brighton (the ugliest university in the UK). It is a command-line program meant as an AI research tool rather than entertainment. 
 
 Gleemin is written entirely in the logic programming language Prolog. To run the code here all you need is the Swi-Prolog interpreter (It's free and open source and you can get it from: http://www.swi-prolog.org/Download.html)
 
-Gleemin includes an AI player programmable with expert knowledge and an interpreter for the game's language (the rules text on the cards). In order to play a card, its text is parsed, then the relevant rules engine predicates are called. 
+Gleemin includes a rules engine that aims to fully and correctly implement the game's tournament rules, an AI player programmable with expert knowledge and an interpreter for the game's language (the rules text on the cards).
+
+Gleemin is a "Magic Virtual Machine" in that it's based on a conceptual model of the game's rules as the specification of a finite state machine. The states of the machine represent all possible states of a Magic: the Gathering game. The language used on the cards to give instructions to the players is seen as the scripting language for this virtual machine and the cards themselves are scripts in this language. Every time you cast a spell or activate an ability, the Magic Game Language interpreter parses the script and calls the appropriate rules engine predicates that change the state of the machine and therefore the game. 
 
 
->===First Commit===<
- - 17/12/11
++-Project goals-+
 
-Gleemin is still in alpha, and still crashes occasionally, due to the migration of the code from a proprietary Prolog interpeter to Swi-Prolog. The full Magic: the Gathering rules are not yet implemented, the full cared text grammar is not yet implemented and the AI player is still dumb as all hell. 
+Gleemin's focus as a project is twofold: 
+
+1. The language.
+What I call the "Magic Game Language", or "MGL" for short (and is officially called "ability text"), is one of the two main foci of the project. The MGL is what is known as a "controlled natural language" (CNL). Those are artificially-created languages used to reduce ambiguity and complexity, in order to facilitate communication between humans or between humans and computers. The MGL is particularly interesting in that it is created in order to permit the communication between players of a game (and one that hands out prizes of tens of thousands of pounds for the top eight, at that; you can see how reducing ambiguity can be desirable under the circumstances), therefore it belongs to a class of adversarial CNL's focused on making game rules possible to adjudicate consistently. Similar examples may be found in the languages used in other board games. The MGL however stands out as a language that has been in continuous (although proprietary) development for some 17 years. In addition to that, it enjoys (if that is the correct word) a specification document that is currently 5869 lines of (unwrapped) text long. 
+
+Knowledge obtained by working on the MGL can be transferred to other domains, particuarly the legal or business domain. 
+
+2. The Agent. 
+The other focus of the project is the development of a player that can play a game like Magic as strongly as a human player. Surprisingly for a game that uses collectible cards with fantasy-themed illustrations, Magic is a game of great strategic depth, that is difficult to create a competent computer player for. The difficulty comes in part from an often quoted characteristic: the cards modify the rules (which makes more sense to the uninitiated if you consider my analogy of a virtual machine and its scripting language, above). It is also worth noting that the game's turn structure is not the common I-Go, You-Go turn structure of traditional card games like bridge. Magic turns are recursive: when a player "receives priority", he or she can take any of a number of actions or pass; if he or she doesn't pass, he or she can then take any of (the same) number of actions or pass. And so on. This means that the complexity of a game tree becomes too high to manage within a turn or two. 
+
+The complexity of the Magic game has generated some academic interest in it, and at least one reasearch grant that I am aware of. Professional and hobbyist programs have addressed the problem in different manners and the current state of the art seems to be the use of Monte Carlo methods, as used for example by the open-source and independent progam Magarena. However, most existing programs with an interesting AI player have to make compromises, particuarly in the extent to which they implement the game's complex rule-base. This means that those players cannot really compete in sanctioned tournaments (since they do not play by the same rules). 
+
+The aim of Gleemin then, is to create an AI player capable of playing the full game, using the official rules, and challenging a human professional. 
+
+For the record, no, I don't expect this to happen tomorrow. When I started the project I set a time frame of about three years, before it begins to produce any significant results. The project was started on November 2010, so we're still a ways to go. 
+
+
++-Running Gleemin-+
+	1) Install Swi Prolog. 
+	2) Get the Gleemin sources. 
+	3) Cd to the sources directory and double-click on "main.pl", 
+		or enter "main.pl" (no quotes) in your command line. 
+	4) You should now see the Swi-Prolog listener window. Enter 
+		"main." (no quotes). This should start Gleemin and you 
+		should see a list of sources being loaded. Notice the 
+		"shoulds". _Should_ there be any problem don't hesitate 
+		to contact me by email. 
+	5) Follow the prompts. If something goes wrong, take it from
+		(3) again (this is necessary to cleanup the program's 
+		database from possible erroneous facts). 
+
+
+
+============================== Git commit History ==============================
+
+=== [27/01/12] Mana grammar update===
+
++- Changes: -+
+	> mana_grammar.pl. This is a new mana grammar for the interpeter, which
+		correctly recognises the textual mana symbols used in the CompRules 
+		(but see my comments in the source file mana_grammar.pl for details). 
+		It also recognises hybrid mana, phyrexian mana, snow mana and mana 
+		variables. 
+	> Players' mana pools can also now use the CompRules symbols. 
+	> Optimised the addition of mana to pools by way of using difference 
+		lists for append operations (which was a long time coming). 
+	
+	* None of these changes have yet been merged into the engine. 
+
+	> Also buffed up this README a bit.	
+	
+		
++- ToDo list: -+
+	> Implement the rules missing from the engine: 
+		> Timing restrictions for spells and abilities.
+		> Triggered abilities.
+		> Planeswalkers.
+		> Layer system for continuous effects (rule 613). 
+		> Hybrid, Phyrexian, Snow and Variable mana costs
+			(currently those are recognised by the interpreter
+			but can't be paid). 
+	> Overhaul of the AI (using symbolic game trees).  
+	> User interface (see comments below). 
+	> Higher-level documentation (so that users don't have to 
+		source-dive to figuer out how to use the system). A 
+		man page for the linux version would be nice.
+	> Complete the overhaul of predicates dealing with mana.
+
+
++- Comments -+			
+	> On a new user interface.		
+	This has been on my mind for a while. 
+	A more friendly user interface will allow non-programmers 
+		and non-Prolog programmers to contribute to the 
+		progamming and, particularly to the population of the 
+		strategy knowledge- base for Glee-min. The plan is to 
+		expose the functionality of the engine and grant access 
+		to the strategic knowledge-base for Glee-min, through a 
+		natural language interface, or even better, an MGL 
+		interface (allowing the MGL to really become "the 
+		scripting language of the magic virtual machine").
+	Note of course that while I say "more user friendly", I 
+		still think of ncurses UI's as quite friendly. But 
+		going from a CLI to a TUI is a step ahead. 
+	Also, some users may not be interested in actually 
+		running the whole application, but may be interested
+		in parts of it, particularly the MGL interpeter. A 
+		separate interface to this functionality is not hard
+		to do (and so should take me about ten years to get 
+		around to). 
+
+	> Dealing with crashes.	
+	> I've decided to stop trying to correct the crashes caused by transferring 
+		the code from Swi-Prolog and Win-LPA Prolog (the proprietary Prolog I 
+		originally developpwed the project on). These crashes happen when Glee-min 
+		is playing a deck it doesn't know, and particularly while taking combat 
+		decisions. They seem to be caused by my heavy use of variables as functors 
+		(as in: Functor(Args)) which is allowed in LPA, but not in Swi. Since I'll 
+		be throwing out all of that code anyway, there is no point in trying to 
+		correct the problem. 
+
+
+=== [17/12/11] First Commit === 
+
+Gleemin is still in alpha, and still crashes occasionally, due to the migration of the code from a proprietary Prolog interpeter to Swi-Prolog. The full Magic: the Gathering rules are not yet implemented, the full card text grammar is not yet implemented and the AI player is still dumb as all hell (although this is largely due to lack of knowledge). 
+
+Despite all of the above, you can already play a full game, in that you can take all player actions, including making combat decisions, casting spells and activating abilities. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
